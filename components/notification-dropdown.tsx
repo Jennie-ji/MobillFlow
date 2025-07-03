@@ -1,24 +1,33 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Bell, AlertTriangle, CheckCircle, Info, X, Clock, Package, TrendingUp } from "lucide-react"
+import { useState } from "react";
+import {
+  Bell,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  X,
+  Clock,
+  Package,
+  TrendingUp,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 interface Notification {
-  id: string
-  type: "warning" | "success" | "info" | "error"
-  title: string
-  message: string
-  timestamp: string
-  read: boolean
-  category: "inventory" | "system" | "performance" | "alert"
+  id: string;
+  type: "warning" | "success" | "info" | "error";
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  category: "inventory" | "system" | "performance" | "alert";
 }
 
 export function NotificationDropdown() {
@@ -59,45 +68,47 @@ export function NotificationDropdown() {
       read: true,
       category: "alert",
     },
-  ])
+  ]);
 
   const markAsRead = (id: string) => {
-    setNotifications((prev) => prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
-  }
+    setNotifications((prev) =>
+      prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif))
+    );
+  };
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })))
-  }
+    setNotifications((prev) => prev.map((notif) => ({ ...notif, read: true })));
+  };
 
   const deleteNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((notif) => notif.id !== id))
-  }
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
       case "warning":
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case "success":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case "error":
-        return <AlertTriangle className="h-4 w-4 text-red-500" />
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
       default:
-        return <Info className="h-4 w-4 text-blue-500" />
+        return <Info className="h-4 w-4 text-blue-500" />;
     }
-  }
+  };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case "inventory":
-        return <Package className="h-3 w-3" />
+        return <Package className="h-3 w-3" />;
       case "performance":
-        return <TrendingUp className="h-3 w-3" />
+        return <TrendingUp className="h-3 w-3" />;
       default:
-        return <Bell className="h-3 w-3" />
+        return <Bell className="h-3 w-3" />;
     }
-  }
+  };
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <DropdownMenu>
@@ -115,9 +126,14 @@ export function NotificationDropdown() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 p-0 bg-white/95 backdrop-blur-sm border-gray-200/50">
+      <DropdownMenuContent
+        align="end"
+        className="w-80 p-0 bg-white/95 backdrop-blur-sm border-gray-200/50"
+      >
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <DropdownMenuLabel className="text-base font-semibold">Notifications</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-base font-semibold">
+            Notifications
+          </DropdownMenuLabel>
           {unreadCount > 0 && (
             <Button
               variant="ghost"
@@ -131,7 +147,9 @@ export function NotificationDropdown() {
         </div>
         <div className="max-h-[400px] overflow-y-auto">
           {notifications.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">No notifications</div>
+            <div className="p-4 text-center text-gray-500">
+              No notifications
+            </div>
           ) : (
             notifications.map((notification) => (
               <div
@@ -143,18 +161,38 @@ export function NotificationDropdown() {
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5">{getIcon(notification.type)}</div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-gray-900 truncate">{notification.title}</p>
-                      {!notification.read && <Badge className="bg-[#ED1B2D] hover:bg-red-600 text-[10px]">New</Badge>}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {notification.title}
+                        </p>
+                        {!notification.read && (
+                          <Badge className="bg-[#ED1B2D] hover:bg-red-600 text-[10px]">
+                            New
+                          </Badge>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteNotification(notification.id)}
+                        className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
+                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                      {notification.message}
+                    </p>
                     <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-1 text-gray-400 text-[10px]">
                         <Clock className="h-3 w-3" />
                         <span>{notification.timestamp}</span>
                         <span className="mx-1">•</span>
                         {getCategoryIcon(notification.category)}
-                        <span className="capitalize">{notification.category}</span>
+                        <span className="capitalize">
+                          {notification.category}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         {!notification.read && (
@@ -167,14 +205,6 @@ export function NotificationDropdown() {
                             Read
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteNotification(notification.id)}
-                          className="h-6 w-6 p-0 text-gray-400 hover:text-red-500 hover:bg-red-50"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
                       </div>
                     </div>
                   </div>
@@ -185,5 +215,5 @@ export function NotificationDropdown() {
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
