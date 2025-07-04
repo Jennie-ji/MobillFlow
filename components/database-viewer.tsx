@@ -1,390 +1,382 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Download, ChevronDown, ChevronRight, FileSpreadsheet } from "lucide-react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ChevronDown, ChevronRight, Download } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface TableData {
-  name: string
-  columns: string[]
-  data: any[]
-  filters: {
-    search?: string[]
-    dropdowns?: { label: string; options: string[] }[]
-  }
+  name: string;
+  columns: string[];
+  data: any[];
 }
 
-const mockTables: TableData[] = [
-  {
-    name: "Inventory",
-    columns: [
-      "BALANCE_AS_OF_DATE",
-      "PLANT_NAME",
-      "MATERIAL_NAME",
-      "BATCH_NUMBER",
-      "UNRESRICTED_STOCK",
-      "STOCK_UNIT",
-      "STOCK_SELL_VALUE",
-      "CURRENCY",
-    ],
-    data: [
-      ["2024-01-15", "CHINA-WAREHOUSE", "P-001", "B001", "1250", "MT", "125000", "CNY"],
-      ["2024-01-15", "SINGAPORE-WAREHOUSE", "P-002", "B002", "890", "MT", "89000", "SGD"],
-      ["2024-01-15", "CHINA-WAREHOUSE", "P-003", "B003", "2100", "MT", "210000", "CNY"],
-      ["2024-01-15", "SINGAPORE-WAREHOUSE", "P-001", "B004", "750", "MT", "75000", "SGD"],
-    ],
-    filters: {
-      search: ["MATERIAL_NAME", "BATCH_NUMBER"],
-      dropdowns: [
-        { label: "Plant", options: ["CHINA-WAREHOUSE", "SINGAPORE-WAREHOUSE"] },
-        { label: "Currency", options: ["CNY", "SGD"] },
-      ],
-    },
-  },
-  {
-    name: "Inbound",
-    columns: ["INBOUND_DATE", "PLANT_NAME", "MATERIAL_NAME", "NET_QUANTITY_MT"],
-    data: [
-      ["2024-01-10", "CHINA-WAREHOUSE", "P-001", "500"],
-      ["2024-01-12", "SINGAPORE-WAREHOUSE", "P-002", "300"],
-      ["2024-01-14", "CHINA-WAREHOUSE", "P-003", "800"],
-    ],
-    filters: {
-      search: ["MATERIAL_NAME"],
-      dropdowns: [{ label: "Plant", options: ["CHINA-WAREHOUSE", "SINGAPORE-WAREHOUSE"] }],
-    },
-  },
-  {
-    name: "Outbound",
-    columns: [
-      "OUTBOUND_DATE",
-      "PLANT_NAME",
-      "MODE_OF_TRANSPORT",
-      "MATERIAL_NAME",
-      "CUSTOMER_NUMBER",
-      "NET_QUANTITY_MT",
-    ],
-    data: [
-      ["2024-01-08", "CHINA-WAREHOUSE", "Truck", "P-001", "C001", "200"],
-      ["2024-01-09", "SINGAPORE-WAREHOUSE", "Marine", "P-002", "C002", "150"],
-      ["2024-01-11", "CHINA-WAREHOUSE", "Truck", "P-003", "C003", "300"],
-    ],
-    filters: {
-      search: ["MATERIAL_NAME", "CUSTOMER_NUMBER"],
-      dropdowns: [
-        { label: "Plant", options: ["CHINA-WAREHOUSE", "SINGAPORE-WAREHOUSE"] },
-        { label: "Transport", options: ["Truck", "Marine"] },
-      ],
-    },
-  },
-  {
-    name: "Material",
-    columns: ["MATERIAL_NAME", "POLYMER_TYPE", "SHELF_LIFE_IN_MONTH", "DOWNGRADE_VALUE_LOST_PERCENT"],
-    data: [
-      ["P-001", "P-001", "12", "5"],
-      ["P-002", "P-002", "18", "3"],
-      ["P-003", "P-001", "24", "7"],
-    ],
-    filters: {
-      search: ["MATERIAL_NAME"],
-      dropdowns: [{ label: "Polymer Type", options: ["P-001", "P-002"] }],
-    },
-  },
-  {
-    name: "OperationCost",
-    columns: ["Operation", "Plant/Mode of Transport", "Cost", "Currency"],
-    data: [
-      ["Storage", "CHINA-WAREHOUSE", "50", "CNY"],
-      ["Transport", "Truck", "100", "CNY"],
-      ["Storage", "SINGAPORE-WAREHOUSE", "60", "SGD"],
-      ["Transport", "Marine", "200", "SGD"],
-    ],
-    filters: {
-      dropdowns: [{ label: "Operation", options: ["Storage", "Transport"] }],
-    },
-  },
-  {
-    name: "Forecast",
-    columns: ["month", "year", "warehouse", "TotalCap(KT)", "Predicted Outbound (KT)", "Predicted Inventory (KT)"],
-    data: [
-      ["January", "2024", "CHINA-WAREHOUSE", "5000", "1200", "3800"],
-      ["January", "2024", "SINGAPORE-WAREHOUSE", "3000", "800", "2200"],
-      ["February", "2024", "CHINA-WAREHOUSE", "5000", "1350", "3650"],
-      ["February", "2024", "SINGAPORE-WAREHOUSE", "3000", "900", "2100"],
-    ],
-    filters: {
-      search: ["warehouse"],
-    },
-  },
-]
-
 export function DatabaseViewer() {
-  const [openTables, setOpenTables] = useState<string[]>(["Inventory"])
-  const [searchTerms, setSearchTerms] = useState<Record<string, string>>({})
-  const [filterValues, setFilterValues] = useState<Record<string, Record<string, string>>>({})
+  const [tables, setTables] = useState<TableData[]>([]);
+  const [openTables, setOpenTables] = useState<string[]>([]);
+  const [searchTerms, setSearchTerms] = useState<Record<string, string>>({});
+  const [filterValues, setFilterValues] = useState<
+    Record<string, Record<string, string>>
+  >({});
+  const [offsets, setOffsets] = useState<Record<string, number>>({});
+  const [tableOrder, setTableOrder] = useState<string[]>([]);
 
-  const toggleTable = (tableName: string) => {
-    setOpenTables((prev) => (prev.includes(tableName) ? prev.filter((t) => t !== tableName) : [...prev, tableName]))
-  }
+  const PAGE_SIZE = 100;
+
+  useEffect(() => {
+    const loadInitial = async () => {
+      const names = [
+        "inventory",
+        "inbound",
+        "outbound",
+        "materialmaster",
+        "operationcost",
+        "forecast",
+      ];
+      setTableOrder(names);
+      for (const name of names) {
+        await loadTable(name, "", {}, 0, true);
+      }
+    };
+    loadInitial();
+  }, []);
+
+  const loadTable = async (
+    name: string,
+    search?: string,
+    filters?: Record<string, string>,
+    offset = 0,
+    replace = false
+  ) => {
+    try {
+      const params = new URLSearchParams();
+      params.set("table", name);
+      params.set("limit", PAGE_SIZE.toString());
+      params.set("offset", offset.toString());
+      if (search) params.set("search", search);
+      if (filters) {
+        Object.entries(filters).forEach(([k, v]) => {
+          if (v && v !== "all" && v !== "none") params.set(k.toLowerCase(), v);
+        });
+      }
+
+      const res = await fetch(`/api/tables?${params.toString()}`);
+      if (!res.ok) {
+        console.error(`API error: ${res.status}`, await res.text());
+        return;
+      }
+
+      const json = await res.json();
+      if (!json?.table) return;
+
+      setTables((prev) => {
+        const existing = prev.find((t) => t.name === json.table.name);
+        const combinedData = replace
+          ? json.table.data
+          : [...(existing?.data || []), ...json.table.data];
+        const updatedTable: TableData = { ...json.table, data: combinedData };
+
+        const order = [
+          ...new Set([...prev.map((t) => t.name), json.table.name]),
+        ];
+        const tableMap = new Map(prev.map((t) => [t.name, t]));
+        tableMap.set(json.table.name, updatedTable);
+
+        return order
+          .map((name) => tableMap.get(name))
+          .filter(Boolean) as TableData[];
+      });
+
+      setOffsets((prev) => ({ ...prev, [name]: offset + PAGE_SIZE }));
+    } catch (error) {
+      console.error("loadTable error:", error);
+    }
+  };
 
   const handleSearch = (tableName: string, value: string) => {
-    setSearchTerms((prev) => ({ ...prev, [tableName]: value }))
-  }
+    setSearchTerms((prev) => ({ ...prev, [tableName]: value }));
+    setOffsets((prev) => ({ ...prev, [tableName]: 0 }));
+    loadTable(tableName, value, filterValues[tableName], 0, true);
+  };
 
-  const handleFilterChange = (tableName: string, filterName: string, value: string) => {
-    setFilterValues((prev) => ({
-      ...prev,
-      [tableName]: {
-        ...prev[tableName],
-        [filterName]: value,
-      },
-    }))
-  }
+  const handleFilterChange = (
+    tableName: string,
+    filterName: string,
+    value: string
+  ) => {
+    const newFilters = { ...filterValues[tableName], [filterName]: value };
+    setFilterValues((prev) => ({ ...prev, [tableName]: newFilters }));
+    setOffsets((prev) => ({ ...prev, [tableName]: 0 }));
+    loadTable(tableName, searchTerms[tableName], newFilters, 0, true);
+  };
 
-  const getFilteredData = (table: TableData) => {
-    let filteredData = table.data
-
-    // Apply search filter
-    const searchTerm = searchTerms[table.name]?.toLowerCase()
-    if (searchTerm && table.filters.search) {
-      filteredData = filteredData.filter((row) =>
-        table.filters.search!.some((searchCol) => {
-          const colIndex = table.columns.indexOf(searchCol)
-          return row[colIndex]?.toString().toLowerCase().includes(searchTerm)
-        }),
-      )
-    }
-
-    // Apply dropdown filters
-    const tableFilters = filterValues[table.name] || {}
-    Object.entries(tableFilters).forEach(([filterName, filterValue]) => {
-      if (filterValue && filterValue !== "all") {
-        const dropdown = table.filters.dropdowns?.find((d) => d.label === filterName)
-        if (dropdown) {
-          // Find the column that matches this filter
-          let colIndex = -1
-          if (filterName === "Plant") colIndex = table.columns.findIndex((col) => col.includes("PLANT"))
-          else if (filterName === "Currency") colIndex = table.columns.indexOf("CURRENCY")
-          else if (filterName === "Transport") colIndex = table.columns.indexOf("MODE_OF_TRANSPORT")
-          else if (filterName === "Polymer Type") colIndex = table.columns.indexOf("POLYMER_TYPE")
-          else if (filterName === "Operation") colIndex = table.columns.indexOf("Operation")
-
-          if (colIndex >= 0) {
-            filteredData = filteredData.filter((row) => row[colIndex] === filterValue)
-          }
-        }
-      }
-    })
-
-    return filteredData
-  }
-
-  // Export functions
   const exportToCSV = (table: TableData) => {
-    const filteredData = getFilteredData(table)
     const csvContent = [
-      table.columns.join(","), // Header
-      ...filteredData.map((row) => row.map((cell) => `"${cell}"`).join(",")), // Data rows
-    ].join("\n")
+      table.columns.join(","),
+      ...table.data.map((row) => row.map((cell: any) => `"${cell}"`).join(",")),
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const timestamp = new Date().toISOString().replace(/[T:.Z]/g, "-");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${table.name}_${timestamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
+  const toggleTable = (tableName: string) => {
+    setOpenTables((prev) =>
+      prev.includes(tableName)
+        ? prev.filter((t) => t !== tableName)
+        : [...prev, tableName]
+    );
+  };
 
-    // Create timestamp in Thai format
-    const now = new Date()
-    const timestamp = now
-      .toLocaleString("th-TH", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-      .replace(/[/:]/g, "-")
-      .replace(/,/g, "_")
-      .replace(/ /g, "_")
+  const renderFilters = (name: string) => {
+    const common = (key: string, label: string, items: string[]) => (
+      <Select onValueChange={(v: string) => handleFilterChange(name, key, v)}>
+        <SelectTrigger className="w-40">
+          <SelectValue placeholder={label} />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All</SelectItem>
+          {items.map((val) => (
+            <SelectItem key={val} value={val}>
+              {val}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
 
-    link.setAttribute("href", url)
-    link.setAttribute("download", `${table.name}_${timestamp}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url) // Clean up memory
-  }
+    const order = (options: [string, string][]) => (
+      <Select
+        onValueChange={(v: string) => handleFilterChange(name, "order", v)}
+      >
+        <SelectTrigger className="w-40">
+          <SelectValue placeholder="Order by" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(([val, label]) => (
+            <SelectItem key={val} value={val}>
+              {label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
 
-  const exportToExcel = (table: TableData) => {
-    const filteredData = getFilteredData(table)
-
-    // Create Excel-compatible HTML table
-    const htmlTable = `
-      <table>
-        <thead>
-          <tr>
-            ${table.columns.map((col) => `<th>${col}</th>`).join("")}
-          </tr>
-        </thead>
-        <tbody>
-          ${filteredData.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`).join("")}
-        </tbody>
-      </table>
-    `
-
-    const blob = new Blob([htmlTable], {
-      type: "application/vnd.ms-excel;charset=utf-8;",
-    })
-    const link = document.createElement("a")
-    const url = URL.createObjectURL(blob)
-
-    // Create timestamp in Thai format
-    const now = new Date()
-    const timestamp = now
-      .toLocaleString("th-TH", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-      .replace(/[/:]/g, "-")
-      .replace(/,/g, "_")
-      .replace(/ /g, "_")
-
-    link.setAttribute("href", url)
-    link.setAttribute("download", `${table.name}_${timestamp}.xls`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url) // Clean up memory
-  }
+    switch (name) {
+      case "inventory":
+        return (
+          <>
+            {common("plant", "Plant", [
+              "SINGAPORE-WAREHOUSE",
+              "CHINA-WAREHOUSE",
+            ])}
+            {common("currency", "Currency", ["SGD", "CNY"])}
+            {order([
+              ["date_asc", "Date Asc"],
+              ["date_desc", "Date Desc"],
+              ["value_asc", "Value Asc"],
+              ["value_desc", "Value Desc"],
+            ])}
+          </>
+        );
+      case "inbound":
+        return (
+          <>
+            {common("plant", "Plant", [
+              "CHINA-WAREHOUSE",
+              "SINGAPORE-WAREHOUSE",
+            ])}
+            {order([
+              ["date_asc", "Date Asc"],
+              ["date_desc", "Date Desc"],
+              ["quantity_asc", "Qty Asc"],
+              ["quantity_desc", "Qty Desc"],
+            ])}
+          </>
+        );
+      case "outbound":
+        return (
+          <>
+            {common("plant", "Plant", [
+              "CHINA-WAREHOUSE",
+              "SINGAPORE-WAREHOUSE",
+            ])}
+            {common("transport", "Transport", ["truck", "marine"])}
+            {order([
+              ["date_asc", "Date Asc"],
+              ["date_desc", "Date Desc"],
+              ["quantity_asc", "Qty Asc"],
+              ["quantity_desc", "Qty Desc"],
+            ])}
+          </>
+        );
+      case "materialmaster":
+        return (
+          <>
+            {common("polymer_type", "Polymer Type", [
+              "P-001",
+              "P-002",
+              "P-003",
+              "P-004",
+            ])}
+            {order([
+              ["shelf_life_asc", "Shelf Life ↑"],
+              ["shelf_life_desc", "Shelf Life ↓"],
+              ["value_lost_asc", "Value Lost ↑"],
+              ["value_lost_desc", "Value Lost ↓"],
+            ])}
+          </>
+        );
+      case "forecast":
+        return common("warehouse", "Warehouse", ["china", "singapore"]);
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto bg-gray-50 p-6">
       <div className="space-y-4">
-        {mockTables.map((table) => (
-          <Card key={table.name} className="overflow-hidden">
-            <Collapsible open={openTables.includes(table.name)} onOpenChange={() => toggleTable(table.name)}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between p-4 bg-gray-50 border-b cursor-pointer hover:bg-gray-100">
-                  <div className="flex items-center space-x-2">
-                    {openTables.includes(table.name) ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                    <h3 className="text-lg font-semibold">{table.name}</h3>
-                    <span className="text-sm text-gray-500">({getFilteredData(table).length} records)</span>
+        {tableOrder.map((name) => {
+          const table = tables.find((t) => t.name === name);
+          if (!table) return null;
+
+          return (
+            <Card key={table.name} className="overflow-hidden">
+              <Collapsible
+                open={openTables.includes(table.name)}
+                onOpenChange={() => toggleTable(table.name)}
+              >
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 border-b cursor-pointer hover:bg-gray-100">
+                    <div className="flex items-center space-x-2">
+                      {openTables.includes(table.name) ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                      <h3 className="text-lg font-semibold">{table.name}</h3>
+                      <span className="text-sm text-gray-500">
+                        ({table.data.length} records)
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-[#ED1B2D] text-[#ED1B2D] hover:bg-[#ED1B2D] hover:text-white bg-transparent"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportToCSV(table);
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export
+                    </Button>
                   </div>
-
-                  {/* Export Dropdown */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-[#ED1B2D] text-[#ED1B2D] hover:bg-[#ED1B2D] hover:text-white bg-transparent"
-                        onClick={(e) => e.stopPropagation()} // Prevent collapsible toggle
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Export
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => exportToCSV(table)}>
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Export {table.name} as CSV
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => exportToExcel(table)}>
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        Export {table.name} as Excel
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-              </CollapsibleTrigger>
-
-              <CollapsibleContent>
-                <div className="p-4">
-                  {/* Filters */}
-                  <div className="flex flex-wrap gap-4 mb-4">
-                    {table.filters.search && (
-                      <div className="flex-1 min-w-64">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                          <Input
-                            placeholder={`Search ${table.filters.search.join(", ")}...`}
-                            value={searchTerms[table.name] || ""}
-                            onChange={(e) => handleSearch(table.name, e.target.value)}
-                            className="pl-10"
-                          />
-                        </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="p-4">
+                    <div className="flex flex-wrap gap-4 mb-4">
+                      {!["operationcost", "forecast"].includes(name) && (
+                        <Input
+                          placeholder={
+                            name === "outbound"
+                              ? "MATERIAL_NAME or CUSTOMER_NUMBER"
+                              : name === "inventory"
+                              ? "MATERIAL_NAME or BATCH_NUMBER"
+                              : "MATERIAL_NAME"
+                          }
+                          value={searchTerms[name] || ""}
+                          onChange={(e) => handleSearch(name, e.target.value)}
+                          className="w-64"
+                        />
+                      )}
+                      {renderFilters(name)}
+                    </div>
+                    <div className="border rounded-lg overflow-hidden">
+                      <div className="max-h-[300px] overflow-y-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-gray-50">
+                              {table.columns.map((column) => (
+                                <TableHead
+                                  key={column}
+                                  className="font-semibold"
+                                >
+                                  {column}
+                                </TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {table.data.map((row, rowIndex) => (
+                              <TableRow
+                                key={rowIndex}
+                                className="hover:bg-gray-50"
+                              >
+                                {row.map((cell: any, cellIndex: number) => (
+                                  <TableCell key={cellIndex}>{cell}</TableCell>
+                                ))}
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                    {table.data.length >=
+                      (offsets[table.name] || PAGE_SIZE) && (
+                      <div className="text-center mt-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            loadTable(
+                              table.name,
+                              searchTerms[table.name],
+                              filterValues[table.name],
+                              offsets[table.name] || 0,
+                              false
+                            )
+                          }
+                        >
+                          Load More
+                        </Button>
                       </div>
                     )}
-
-                    {table.filters.dropdowns?.map((dropdown) => (
-                      <Select
-                        key={dropdown.label}
-                        value={filterValues[table.name]?.[dropdown.label] || "all"}
-                        onValueChange={(value) => handleFilterChange(table.name, dropdown.label, value)}
-                      >
-                        <SelectTrigger className="w-48">
-                          <SelectValue placeholder={`Select ${dropdown.label}`} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All {dropdown.label}s</SelectItem>
-                          {dropdown.options.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    ))}
                   </div>
-
-                  {/* Table */}
-                  <div className="border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50">
-                          {table.columns.map((column) => (
-                            <TableHead key={column} className="font-semibold">
-                              {column}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {getFilteredData(table).map((row, index) => (
-                          <TableRow key={index} className="hover:bg-gray-50">
-                            {row.map((cell, cellIndex) => (
-                              <TableCell key={cellIndex}>{cell}</TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  {getFilteredData(table).length === 0 && (
-                    <div className="text-center py-8 text-gray-500">No records found matching your filters.</div>
-                  )}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          </Card>
-        ))}
+                </CollapsibleContent>
+              </Collapsible>
+            </Card>
+          );
+        })}
       </div>
     </div>
-  )
+  );
 }
