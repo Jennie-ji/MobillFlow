@@ -8,36 +8,60 @@ interface TableRendererProps {
 
 export function TableRenderer({ markdown }: TableRendererProps) {
   const { headers, rows } = useMemo(() => {
-    // ปรับปรุง parser ให้รองรับข้อมูลแบบ Tab-separated โดยเฉพาะ
-    const parseTabSeparatedData = (data: string) => {
-      const lines = data.trim().split("\n")
+    // รองรับทั้ง Markdown Table (pipe) และ Tab-separated
+    const parseTable = (data: string) => {
+      const lines = data.trim().split("\n").filter(l => l.trim() !== "")
+      if (lines.length < 1) return { headers: [], rows: [] }
 
-      // ตารางต้องมีอย่างน้อย 1 บรรทัด (สำหรับ header)
-      if (lines.length < 1) {
-        return { headers: [], rows: [] }
-      }
+      // ตรวจสอบว่าเป็น markdown table หรือ tab-separated
+      // ถ้าเจอ '|' และมีบรรทัดคั่น '---' ให้ใช้ markdown table
+      const isMarkdownTable = lines[0].includes("|") && lines[1] && /^\s*[-| ]+\s*$/.test(lines[1])
 
-      // 1. เปลี่ยนตัวคั่นจาก '|' เป็น Tab (\t)
-      const delimiter = /\t/
-
-      // บรรทัดแรกคือ header
-      const headers = lines[0].split(delimiter).map((h) => h.trim())
-
-      // 2. ข้อมูลเริ่มจากบรรทัดถัดไป (slice(1)) เพราะไม่มีบรรทัดคั่น "---"
-      const dataLines = lines.slice(1)
-
-      const rows = dataLines
-        .map((line) => {
-          // 3. แยก cell ในแต่ละแถว และไม่กรอง cell ที่ว่างเปล่าทิ้งเพื่อรักษารูปแบบตาราง
-          return line.split(delimiter).map((cell) => cell.trim())
+      if (isMarkdownTable) {
+        // Markdown Table
+        const headerLine = lines[0]
+        // รองรับกรณี header เริ่ม/จบด้วย |
+        let cleanHeader = headerLine
+        if (cleanHeader.startsWith("|")) cleanHeader = cleanHeader.slice(1)
+        if (cleanHeader.endsWith("|")) cleanHeader = cleanHeader.slice(0, -1)
+        const headers = cleanHeader.split("|").map(h => h.trim())
+        // ถ้า header ไม่มีข้อมูล หรือเป็น --- ทั้งหมด ให้ถือว่าไม่ valid
+        const isHeaderAllDashes = headers.every(h => /^-+$/.test(h) || h === '')
+        if (headers.length === 0 || isHeaderAllDashes) {
+          return { headers: [], rows: [] }
+        }
+        // ข้ามบรรทัดคั่น ---
+        const dataLines = lines.slice(2)
+        const rows = dataLines.map(line => {
+          let clean = line
+          if (clean.startsWith("|")) clean = clean.slice(1)
+          if (clean.endsWith("|")) clean = clean.slice(0, -1)
+          // split แล้วเติมช่องว่างถ้า cell ไม่ครบ header
+          const cells = clean.split("|").map(cell => cell.trim())
+          while (cells.length < headers.length) cells.push("")
+          return cells.slice(0, headers.length)
         })
-        // กรองแถวที่ว่างเปล่าจริงๆ (ไม่มีข้อมูลเลย) ทิ้งไป
-        .filter((row) => row.length > 1 || (row.length === 1 && row[0] !== ''));
-
-      return { headers, rows }
+        return { headers, rows }
+      } else {
+        // Tab-separated (หรือกรณี fallback)
+        const delimiter = /\t/
+        const headers = lines[0].split(delimiter).map((h) => h.trim())
+        // ถ้า header ไม่มีข้อมูล ให้ถือว่าไม่ valid
+        if (headers.length === 0 || headers.every(h => h === '')) {
+          return { headers: [], rows: [] }
+        }
+        const dataLines = lines.slice(1)
+        const rows = dataLines
+          .map((line) => {
+            const cells = line.split(delimiter).map((cell) => cell.trim())
+            while (cells.length < headers.length) cells.push("")
+            return cells.slice(0, headers.length)
+          })
+          .filter((row) => row.length > 1 || (row.length === 1 && row[0] !== ''));
+        return { headers, rows }
+      }
     }
-
-    return parseTabSeparatedData(markdown)
+    return parseTable(markdown)
   }, [markdown])
 
   if (headers.length === 0 || rows.length === 0) {
