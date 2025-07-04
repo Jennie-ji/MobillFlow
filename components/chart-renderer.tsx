@@ -2,20 +2,38 @@
 
 import { useRef } from "react"
 import {
-  Chart as ChartJS,
+  Chart,
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  DoughnutController,
+  ArcElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
   Title,
   Tooltip,
   Legend,
-  ArcElement,
 } from "chart.js"
-import { Chart } from "react-chartjs-2"
+import { Chart as ReactChartJS } from "react-chartjs-2"
+import type { Chart as ChartJS } from "chart.js"
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement)
+// Register all controllers and elements you use
+Chart.register(
+  BarController,
+  BarElement,
+  LineController,
+  LineElement,
+  PointElement,
+  DoughnutController,
+  ArcElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend
+)
 
 interface ChartRendererProps {
   config: any
@@ -34,7 +52,7 @@ export function ChartRenderer({ config }: ChartRendererProps) {
 
   return (
     <div className="h-64">
-      <Chart
+      <ReactChartJS
         ref={chartRef}
         type={config.type}
         data={config.data}

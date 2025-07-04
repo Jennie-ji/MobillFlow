@@ -28,7 +28,7 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
           </div>
           <div>
             <h2 className="text-2xl font-bold bg-gradient-to-r from-[#ED1B2D] to-red-600 bg-clip-text text-transparent">
-              MobillFlow
+              MobilFlow
             </h2>
             <p className="text-sm text-gray-600 font-medium">Warehouse Management</p>
           </div>
@@ -70,8 +70,8 @@ export function Sidebar({ activeSection, onSectionChange }: SidebarProps) {
       {/* Footer - ปรับปรุงให้สวยขึ้น */}
       <div className="p-4 border-t border-gray-200/50">
         <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-3 text-center">
-          <p className="text-xs text-gray-500 font-medium">© 2024 MobillFlow</p>
-          <p className="text-xs text-gray-400 mt-1">Powered by AI</p>
+          <p className="text-xs text-gray-500 font-medium">© 2025 MobillFlow</p>
+          <p className="text-xs text-gray-400 mt-1">Powered by Great player good team</p>
         </div>
       </div>
     </div>

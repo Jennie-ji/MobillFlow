@@ -8,6 +8,9 @@ import { DatabaseViewer } from "@/components/database-viewer"
 import { NotificationDropdown } from "@/components/notification-dropdown"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale } from 'chart.js';
+
+Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale);
 
 type ActiveSection = "chat" | "dashboard" | "database"
 
@@ -36,7 +39,7 @@ export default function Home() {
       case "database":
         return "Database Viewer"
       default:
-        return "MobillFlow"
+        return "MobilFlow"
     }
   }
 

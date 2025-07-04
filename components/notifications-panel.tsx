@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -17,62 +17,55 @@ interface Notification {
 }
 
 export function NotificationsPanel() {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      type: "warning",
-      title: "Low Inventory Alert",
-      message: "P-002 stock is running low in SINGAPORE-WAREHOUSE (890 MT remaining)",
-      timestamp: "2 minutes ago",
-      read: false,
-      category: "inventory",
-    },
-    {
-      id: "2",
-      type: "success",
-      title: "Shipment Completed",
-      message: "Outbound shipment #SH-2024-001 has been successfully delivered",
-      timestamp: "15 minutes ago",
-      read: false,
-      category: "system",
-    },
-    {
-      id: "3",
-      type: "info",
-      title: "Performance Report",
-      message: "Weekly performance report is now available for review",
-      timestamp: "1 hour ago",
-      read: true,
-      category: "performance",
-    },
-    {
-      id: "4",
-      type: "error",
-      title: "System Alert",
-      message: "Database connection timeout detected - automatically resolved",
-      timestamp: "2 hours ago",
-      read: true,
-      category: "alert",
-    },
-    {
-      id: "5",
-      type: "warning",
-      title: "Forecast Deviation",
-      message: "Actual inventory differs from forecast by 15% in CHINA-WAREHOUSE",
-      timestamp: "3 hours ago",
-      read: false,
-      category: "performance",
-    },
-    {
-      id: "6",
-      type: "success",
-      title: "Inbound Received",
-      message: "New shipment of 500 MT P-001 received at CHINA-WAREHOUSE",
-      timestamp: "4 hours ago",
-      read: true,
-      category: "inventory",
-    },
-  ])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+
+  // Fetch notifications from API on mount
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch("http://localhost:5678/webhook/get_notification");
+        if (!res.ok) return;
+        const data = await res.json();
+        let parsed: any[] = [];
+        if (Array.isArray(data) && data.length > 0 && typeof data[0].output === "string") {
+          try {
+            // Fix: double JSON.parse if needed
+            let output = data[0].output;
+            if (typeof output === "string") {
+              // If output is a stringified array, parse it
+              parsed = JSON.parse(output);
+              // If the result is a string (double encoded), parse again
+              if (typeof parsed === "string") {
+                parsed = JSON.parse(parsed);
+              }
+            }
+          } catch (e) {
+            parsed = [];
+          }
+        }
+        if (!Array.isArray(parsed)) parsed = [];
+        const mapped: Notification[] = parsed.map((item, idx) => ({
+          id: (idx + 1).toString(),
+          type: item.topic.toLowerCase().includes("alert") ? "warning" : "info",
+          title: item.topic || "Notification",
+          message: item.Description || "",
+          timestamp: item.date || "",
+          read: false,
+          category: item.warehouse && item.warehouse.toLowerCase().includes("china")
+            ? "inventory"
+            : item.warehouse && item.warehouse.toLowerCase().includes("singapore")
+            ? "inventory"
+            : item.topic && item.topic.toLowerCase().includes("report")
+            ? "performance"
+            : "alert",
+        }));
+        setNotifications(mapped);
+      } catch (e) {
+        // fallback: do nothing
+      }
+    };
+    fetchNotifications();
+  }, []);
 
   const markAsRead = (id: string) => {
     setNotifications((prev) => prev.map((notif) => (notif.id === id ? { ...notif, read: true } : notif)))
@@ -200,59 +193,66 @@ export function NotificationsPanel() {
           <div className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Notifications</h2>
             <div className="space-y-4">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className={`p-4 rounded-lg border transition-all duration-200 ${
-                    notification.read ? "bg-gray-50/50 border-gray-200/50" : "bg-white border-[#ED1B2D]/20 shadow-sm"
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-3 flex-1">
-                      <div className="mt-1">{getIcon(notification.type)}</div>
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className={`font-medium ${notification.read ? "text-gray-700" : "text-gray-900"}`}>
-                            {notification.title}
-                          </h3>
-                          {!notification.read && <Badge className="bg-[#ED1B2D] hover:bg-red-600 text-xs">New</Badge>}
-                          <div className="flex items-center space-x-1 text-gray-500">
-                            {getCategoryIcon(notification.category)}
-                            <span className="text-xs capitalize">{notification.category}</span>
+              {notifications.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Bell className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                  <p>No notifications available</p>
+                </div>
+              ) : (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className={`p-4 rounded-lg border transition-all duration-200 ${
+                      notification.read ? "bg-gray-50/50 border-gray-200/50" : "bg-white border-[#ED1B2D]/20 shadow-sm"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3 flex-1">
+                        <div className="mt-1">{getIcon(notification.type)}</div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <h3 className={`font-medium ${notification.read ? "text-gray-700" : "text-gray-900"}`}>
+                              {notification.title}
+                            </h3>
+                            {!notification.read && <Badge className="bg-[#ED1B2D] hover:bg-red-600 text-xs">New</Badge>}
+                            <div className="flex items-center space-x-1 text-gray-500">
+                              {getCategoryIcon(notification.category)}
+                              <span className="text-xs capitalize">{notification.category}</span>
+                            </div>
                           </div>
+                          <p className={`text-sm ${notification.read ? "text-gray-500" : "text-gray-700"} whitespace-pre-wrap`}>
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-2 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {notification.timestamp}
+                          </p>
                         </div>
-                        <p className={`text-sm ${notification.read ? "text-gray-500" : "text-gray-700"}`}>
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2 flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          {notification.timestamp}
-                        </p>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      {!notification.read && (
+                      <div className="flex items-center space-x-2 ml-4">
+                        {!notification.read && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => markAsRead(notification.id)}
+                            className="text-[#ED1B2D] hover:bg-red-50"
+                          >
+                            Mark as read
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => markAsRead(notification.id)}
-                          className="text-[#ED1B2D] hover:bg-red-50"
+                          onClick={() => deleteNotification(notification.id)}
+                          className="text-gray-400 hover:text-red-500 hover:bg-red-50"
                         >
-                          Mark as read
+                          <X className="h-4 w-4" />
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteNotification(notification.id)}
-                        className="text-gray-400 hover:text-red-500 hover:bg-red-50"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </Card>

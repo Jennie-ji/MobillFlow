@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useWidgetStore } from "@/store/widgetStore"
+import { useRouter } from "next/navigation"
 import { Send, BarChart3, Bot } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -35,7 +37,107 @@ function ThinkingAnimation() {
   )
 }
 
+// Helper function to detect if content is a chart configuration
+function isChartConfig(obj: any): boolean {
+  return obj && 
+         typeof obj === 'object' && 
+         obj.type && 
+         obj.data && 
+         ['bar', 'line', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble'].includes(obj.type)
+}
+
+// Helper function to parse API response and determine message type
+function parseApiResponse(content: any): { type: string; parsedContent: any; displayContent: string } {
+  // If content is a string, check for special formats
+  if (typeof content === 'string') {
+    // Check for markdown table
+    if (content.startsWith('[markdown]') && content.endsWith('[markdown]')) {
+      console.debug('[parseApiResponse] Detected markdown:', content);
+      return {
+        type: 'markdown' as const,
+        parsedContent: content.slice(10, -10).trim(),
+        displayContent: ''
+      }
+    }
+
+    // Try to parse as JSON (chart config)
+    try {
+      const parsed = JSON.parse(content.replace(/\n/g, ''))
+      console.debug('[parseApiResponse] Parsed JSON:', parsed);
+      // รองรับ chart config ที่มี type, data, options (เช่นตัวอย่างที่ผู้ใช้ให้มา)
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        parsed.type &&
+        parsed.data &&
+        parsed.options
+      ) {
+        console.debug('[parseApiResponse] Detected chart config (type/data/options):', parsed);
+        return {
+          type: 'chart' as const,
+          parsedContent: parsed,
+          displayContent: ''
+        }
+      }
+      // รองรับ chart config แบบเดิม (type/data เฉยๆ)
+      if (isChartConfig(parsed)) {
+        console.debug('[parseApiResponse] Detected chart config (isChartConfig):', parsed);
+        return {
+          type: 'chart' as const,
+          parsedContent: parsed,
+          displayContent: ''
+        }
+      }
+    } catch (e) {
+      console.debug('[parseApiResponse] Not JSON, treat as text:', content, e);
+      // Not JSON, treat as text
+    }
+
+    // Regular text with line breaks
+    console.debug('[parseApiResponse] Treat as text:', content);
+    return {
+      type: 'text' as const,
+      parsedContent: content,
+      displayContent: content.replace(/(\r\n|\n|\r)/g, "<br />")
+    }
+  }
+
+  // If content is already an object, check if it's a chart config (type/data/options)
+  if (
+    content &&
+    typeof content === 'object' &&
+    content.type &&
+    content.data &&
+    content.options
+  ) {
+    console.debug('[parseApiResponse] Detected chart config (object, type/data/options):', content);
+    return {
+      type: 'chart' as const,
+      parsedContent: content,
+      displayContent: ''
+    }
+  }
+  // รองรับ chart config แบบเดิม (type/data เฉยๆ)
+  if (isChartConfig(content)) {
+    console.debug('[parseApiResponse] Detected chart config (object, isChartConfig):', content);
+    return {
+      type: 'chart' as const,
+      parsedContent: content,
+      displayContent: ''
+    }
+  }
+
+  // Default to text
+  console.debug('[parseApiResponse] Default to text:', content);
+  return {
+    type: 'text' as const,
+    parsedContent: content,
+    displayContent: String(content)
+  }
+}
+
 export function ChatWithEmmie() {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -56,9 +158,101 @@ export function ChatWithEmmie() {
     scrollToBottom()
   }, [messages, isThinking])
 
-  const suggestions = ["create graph", "create table", "What material is overstocked in MY warehouse?"]
+  const suggestions = ["สร้างกราฟ", "สร้างตาราง","รายการ Inbound สูงสุดจากคลังสินค้าจีนในเดือนที่แล้ว เมื่อเปรียบเทียบกับเดือนก่อนหน้า", "ระดับ Inventory เดือนที่เเล้วที่คลังสินค้าทุกแห่งเปรียบเทียบกับ Inventory ที่pridictไว้เป็นอย่างไร?", "outbound เดือนที่เเล้ว เปรียบเทียบกับ outbound ที่pridictไว้เป็นอย่างไร?","มีBATCHESใดบ้างที่มีการถือครองสินค้าที่ยาวนานกว่าช่วงเวลาที่กำหนดในเดือนที่แล้ว?"]
 
-  const handleSend = () => {
+  // Load chat history on component mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch("http://localhost:5678/webhook/chat-history")
+        if (!res.ok) {
+          console.warn("[ChatWithEmmie] chat-history fetch failed", res.status, res.statusText)
+          return
+        }
+        const data = await res.json()
+        console.log("[ChatWithEmmie] chat-history response:", data)
+        
+        let historyMessages: Message[] = []
+        
+        if (data && typeof data === 'object' && data.propertyName && Array.isArray(data.propertyName)) {
+          historyMessages = data.propertyName
+            .map((msgStr: string, idx: number) => {
+              try {
+                let msgObj = JSON.parse(msgStr)
+                // Handle double-encoded content
+                if (typeof msgObj.data === 'string') {
+                  try {
+                    msgObj.data = JSON.parse(msgObj.data)
+                  } catch {}
+                }
+                // Always use parseApiResponse for AI/assistant messages
+                if (msgObj.type === "ai" || msgObj.type === "assistant") {
+                  let content = msgObj.data && msgObj.data.content !== undefined ? msgObj.data.content : msgObj.data;
+                  // If content is stringified chart config, parseApiResponse will handle it
+                  const { type, parsedContent, displayContent } = parseApiResponse(content)
+                  return {
+                    id: `history-ai-${idx}`,
+                    type: "assistant",
+                    content: displayContent,
+                    data: { type: type as "text" | "chart" | "markdown", content: parsedContent },
+                  }
+                }
+                // Process user messages
+                if (msgObj.type === "human" || msgObj.type === "user") {
+                  return {
+                    id: `history-human-${idx}`,
+                    type: "user",
+                    content: msgObj.data.content,
+                    data: { type: "text", content: msgObj.data.content },
+                  }
+                }
+              } catch (e) {
+                console.warn("[ChatWithEmmie] Failed to parse chat-history message", msgStr, e)
+              }
+              return null
+            })
+            .filter(Boolean) as Message[]
+          
+          // Sort messages by index (oldest first)
+          historyMessages = historyMessages.sort((a, b) => {
+            const getIdx = (id: string) => {
+              const m = id.match(/-(\d+)$/); 
+              return m ? parseInt(m[1], 10) : 0;
+            };
+            return getIdx(b.id) - getIdx(a.id);
+          });
+        } else {
+          console.warn("[ChatWithEmmie] Unexpected chat-history format", data)
+        }
+        
+        if (historyMessages.length > 0) {
+          setMessages(historyMessages)
+        } else {
+          setMessages([
+            {
+              id: "1",
+              type: "assistant",
+              content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?",
+              data: { type: "text", content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?" },
+            },
+          ])
+        }
+      } catch (e) {
+        console.error("[ChatWithEmmie] chat-history error", e)
+        setMessages([
+          {
+            id: "1",
+            type: "assistant",
+            content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?",
+            data: { type: "text", content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?" },
+          },
+        ])
+      }
+    }
+    fetchHistory()
+  }, [])
+
+  const handleSend = async () => {
     if (!inputValue.trim() || isThinking) return
 
     const userMessage: Message = {
@@ -72,111 +266,60 @@ export function ChatWithEmmie() {
     setInputValue("")
     setIsThinking(true)
 
-    // Simulate AI thinking time (2-4 seconds)
-    const thinkingTime = Math.random() * 2000 + 2000
-
-    setTimeout(() => {
-      setIsThinking(false)
-      const aiResponse = generateAIResponse(userMessage.content)
-      setMessages((prev) => [...prev, aiResponse])
-    }, thinkingTime)
-  }
-
-  const generateAIResponse = (input: string): Message => {
-    const lowerInput = input.toLowerCase()
-
-    if (lowerInput.includes("graph") || lowerInput.includes("chart") || lowerInput.includes("forecast")) {
-      return {
-        id: (Date.now() + 1).toString(),
-        type: "assistant",
-        content: "Here's the forecast vs actual data for the last 6 months:",
-        data: {
-          type: "chart",
-          content: {
-            type: "line",
-            data: {
-              labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-              datasets: [
-                {
-                  label: "Forecast",
-                  data: [120, 135, 140, 125, 160, 155],
-                  borderColor: "#ED1B2D",
-                  backgroundColor: "rgba(237, 27, 45, 0.1)",
-                  tension: 0.4,
-                },
-                {
-                  label: "Actual",
-                  data: [110, 130, 145, 120, 155, 150],
-                  borderColor: "#374151",
-                  backgroundColor: "rgba(55, 65, 81, 0.1)",
-                  tension: 0.4,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "top" as const,
-                },
-                title: {
-                  display: true,
-                  text: "Forecast vs Actual (KT)",
-                },
-              },
-            },
+    try {
+      const response = await fetch("http://localhost:5678/webhook/sendmsg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: inputValue }),
+      })
+      
+      if (!response.ok) throw new Error("Network response was not ok")
+      
+      const data = await response.json()
+      console.log("[ChatWithEmmie] API Response:", data)
+      
+      let aiMessages: Message[] = []
+      
+      if (Array.isArray(data)) {
+        // Handle array response
+        aiMessages = data.map((item: any, idx: number) => {
+          const content = item.output || item.reply || "No response from server."
+          const { type, parsedContent, displayContent } = parseApiResponse(content)
+          
+          return {
+            id: (Date.now() + 1 + idx).toString(),
+            type: "assistant",
+            content: displayContent,
+            data: { type: type as "text" | "chart" | "markdown", content: parsedContent },
+          }
+        })
+      } else {
+        // Handle single object response
+        const content = data.reply || data.output || data.message || "No response from server."
+        const { type, parsedContent, displayContent } = parseApiResponse(content)
+        
+        aiMessages = [
+          {
+            id: (Date.now() + 1).toString(),
+            type: "assistant",
+            content: displayContent,
+            data: { type: type as "text" | "chart" | "markdown", content: parsedContent },
           },
-        },
+        ]
       }
-    }
-
-    if (lowerInput.includes("table") || lowerInput.includes("inventory")) {
-      return {
+      
+      setMessages((prev) => [...prev, ...aiMessages])
+    } catch (error) {
+      console.error("[ChatWithEmmie] Error:", error)
+      const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         type: "assistant",
-        content: "Here's the current inventory summary:",
-        data: {
-          type: "markdown",
-          content: `| Material | Plant | Stock (MT) | Value (USD) |
-|----------|-------|------------|-------------|
-| P-001 | CHINA-WAREHOUSE | 1,250 | $125,000 |
-| P-002 | SINGAPORE-WAREHOUSE | 890 | $89,000 |
-| P-003 | CHINA-WAREHOUSE | 2,100 | $210,000 |
-| P-001 | SINGAPORE-WAREHOUSE | 750 | $75,000 |`,
-        },
+        content: "Error contacting server.",
+        data: { type: "text", content: "Error contacting server." },
       }
-    }
-
-    if (lowerInput.includes("overstocked")) {
-      return {
-        id: (Date.now() + 1).toString(),
-        type: "assistant",
-        content:
-          "Based on current data, P-003 appears to be overstocked in CHINA-WAREHOUSE with 2,100 MT, which is 40% above optimal levels. Consider redistributing to SINGAPORE-WAREHOUSE or planning promotional activities.",
-        data: {
-          type: "text",
-          content:
-            "Based on current data, P-003 appears to be overstocked in CHINA-WAREHOUSE with 2,100 MT, which is 40% above optimal levels.",
-        },
-      }
-    }
-
-    // Random responses for variety
-    const responses = [
-      "I understand your question. Let me analyze the warehouse data and provide you with insights.",
-      "Based on the current warehouse data, I can help you with that analysis.",
-      "Let me check the latest warehouse information to give you the most accurate answer.",
-      "I'm processing your request using our warehouse management system data.",
-    ]
-
-    return {
-      id: (Date.now() + 1).toString(),
-      type: "assistant",
-      content: responses[Math.floor(Math.random() * responses.length)],
-      data: {
-        type: "text",
-        content: responses[Math.floor(Math.random() * responses.length)],
-      },
+      setMessages((prev) => [...prev, aiResponse])
+    } finally {
+      setIsThinking(false)
     }
   }
 
@@ -188,21 +331,35 @@ export function ChatWithEmmie() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Emmie Header */}
-      
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {messages.map((message) => (
           <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
             <Card className={`max-w-2xl p-4 ${message.type === "user" ? "bg-[#ED1B2D] text-white" : "bg-white"}`}>
-              <p className="mb-2">{message.content}</p>
+              {/* Render content based on type */}
+              {message.data?.type === "text" && message.content && (
+                <div className="mb-2" dangerouslySetInnerHTML={{ __html: message.content }} />
+              )}
+              
+              {message.data?.type === "text" && !message.content && (
+                <p className="mb-2">{message.data.content}</p>
+              )}
 
               {message.data?.type === "chart" && (
                 <div className="mt-4">
                   <ChartRenderer config={message.data.content} />
-                  <Button className="mt-2 bg-[#ED1B2D] hover:bg-red-700 text-white" size="sm">
-                    <BarChart3 className="h-4 w-4 mr-2" />
+                  <Button
+                    className="mt-2 bg-[#ED1B2D] hover:bg-red-700 text-white"
+                    size="sm"
+                    onClick={() => {
+                      useWidgetStore.getState().addAvailableWidget({
+                        id: Date.now().toString(),
+                        type: message.data?.type === "chart" ? "chart" : "table",
+                        title: message.data?.content?.options?.plugins?.title?.text || "From Chat",
+                        data: message.data?.content,
+                      })
+                    }}
+                  >
                     Go to Dashboard
                   </Button>
                 </div>
@@ -211,8 +368,18 @@ export function ChatWithEmmie() {
               {message.data?.type === "markdown" && (
                 <div className="mt-4">
                   <TableRenderer markdown={message.data.content} />
-                  <Button className="mt-2 bg-[#ED1B2D] hover:bg-red-700 text-white" size="sm">
-                    <BarChart3 className="h-4 w-4 mr-2" />
+                  <Button
+                    className="mt-2 bg-[#ED1B2D] hover:bg-red-700 text-white"
+                    size="sm"
+                    onClick={() => {
+                      useWidgetStore.getState().addAvailableWidget({
+                        id: Date.now().toString(),
+                        type: message.data?.type === "chart" ? "chart" : "table",
+                        title: message.data?.content?.options?.plugins?.title?.text || "From Chat",
+                        data: message.data?.content,
+                      })
+                    }}
+                  >
                     Go to Dashboard
                   </Button>
                 </div>
