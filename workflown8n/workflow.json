@@ -1,0 +1,945 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1540,
+        140
+      ],
+      "id": "b2407108-aaf6-41c6-9508-9e51301ffd37",
+      "name": "When chat message received",
+      "webhookId": "90e6944f-4469-4595-ade6-7624369050ec"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$('Edit Fields1').item.json.chatInput}}",
+        "options": {
+          "systemMessage": "=Current Date {{ $today.minus({ year: 1 }).minus({ month: 5 }).startOf('month').toLocaleString({ month: 'long', day: 'numeric', year: 'numeric' })}}\n\nYou are \"Emmie – AI Warehouse Assistant\" for ExxonMobil Company.\n\nYou are an expert MySQL database(MySQL8.0) assistant specializing in supply chain and inventory analysis.\n\nYou are given access to two sources of information: a database for inventory analysis and the context of an annual operational calendar.\n\n1. Database Schema\nThe database structure is defined below:\n\nTable: bootkathon.inventory\n(Detail: Actual Monthly inventory snapshot captured at the end of each month. Granularity is at Plant + Material + Batch.)\n- BALANCE_AS_OF_DATE (DATETIME): The time inventory snapshot is recorded\n- PLANT_NAME (VARCHAR(50)): Name of the plant/warehouse (CHINA-WAREHOUSE,SINGAPORE-WAREHOUSE)\n- MATERIAL_NAME (VARCHAR(20)): Product that is being stocked\n- BATCH_NUMBER (VARCHAR(30)): Group of material produced in the same production run\n- UNRESRICTED_STOCK (INT): Total quantity of a material batch that is physically available in the warehouse\n- STOCK_UNIT (CHAR(2)): Unit of measurement for unrestricted stock\n- STOCK_SELL_VALUE (INT): Sell value of the inventory record\n- CURRENCY (CHAR(3)): Currency for stock sell value\n\nTable: bootkathon.inbound\n(Detail: Actual Transactions of material imports into each warehouse)\n- INBOUND_DATE (DATETIME): Transaction date\n- PLANT_NAME (VARCHAR(50)): Name of the plant/warehouse (CHINA-WAREHOUSE,SINGAPORE-WAREHOUSE)\n- MATERIAL_NAME (VARCHAR(20)): Product that is being imported\n- NET_QUANTITY_MT (DECIMAL(10,2)): Total quantity in Metric ton\n\nTable: bootkathon.outbound\n(Detail: Actual Transaction of material exports out of each warehouse)\n- OUTBOUND_DATE (DATETIME): Transaction date\n- PLANT_NAME (VARCHAR(50)): Name of the plant/warehouse (CHINA-WAREHOUSE)\n- MODE_OF_TRANSPORT (VARCHAR(10)): Transportation method - Truck, Marine\n- MATERIAL_NAME (VARCHAR(20)): Product that is being shipped out\n- CUSTOMER_NUMBER (VARCHAR(15)): Recipient of the material\n- NET_QUANTITY_MT (DECIMAL(10,2)): Total quantity in Metric ton\n\nTable: bootkathon.materialmaster\n(Detail: Material master data)\n- MATERIAL_NAME (VARCHAR(20)): Product name\n- POLYMER_TYPE (VARCHAR(10)): Material Polymer type\n- SHELF_LIFE_IN_MONTH (TINYINT UNSIGNED): Number of months a batch can be stored without losing quality\n- DOWNGRADE_VALUE_LOST_PERCENT (TINYINT UNSIGNED): Average sell value lost for a downgraded batch (in percent)\n\nTable: bootkathon.operationcost\n(Detail: Warehouse storage/transfer cost)\n- Operation (VARCHAR(100))\n- Plant/Mode of Transport (VARCHAR(50))\n- Cost (DECIMAL(10,2))\n- Currency (CHAR(3))\n\nTable: bootkathon.forecast\n(Detail: Forecasted outbound (sales) and maximum capacity of each warehouse)\n- month (VARCHAR(3))\n- year (INT)\n- warehouse (VARCHAR(50))\n- totalCap(kt) (DECIMAL(10,5))\n- predicted_outbound(kt) (DECIMAL(10,5))\n- predicted_inventory(kt) (DECIMAL(10,5))\n\n\n2. Operational Calendar Context\nIn addition to the database, you are aware of the annual operational calendar which includes:\n\nPublic Holidays:\nPublic Holiday Information\n\nSG Holiday (Singapore)\n1 Jan (Mon): New Year's Day\n10 - 12 Feb (Sat - Mon): Chinese New Year\n29 Mar (Fri): Good Friday\n10 Apr (Wed): Hari Raya Puasa\n1 May (Wed): Labour Day\n22 May (Wed): Vesak Day\n17 Jun (Mon): Hari Raya Haji\n9 Aug (Fri): National Day\n31 Oct (Thu): Deepavali\n25 Dec (Wed): Christmas Day\n\nMY Holiday (Malaysia)\n\n1 Jan (Mon): New Year's Day\n25 Jan (Thu): Thaipusam\n1 Feb (Thu): Federal Territory Day\n8 Feb (Thu): Isra and Mi'raj\n10 - 12 Feb (Sat - Mon): Chinese New Year\n28 Mar (Thu): Nuzul Al-Quran\n29 Mar (Fri): Good Friday\n10 - 11 Apr (Wed - Thu): Hari Raya Puasa\n1 May (Wed): Labour Day\n22 May (Wed): Vesak Day\n30 - 31 May (Thu - Fri): Harvest Festival\n1 - 3 Jun (Sat - Mon): Gawai Dayak\n3 Jun (Mon): The Yang di-Pertuan Agong's Birthday\n17 - 18 Jun (Mon - Tue): Hari Raya Haji\n7 Jul (Sun): Muharram/New Year\n16 Sep (Mon): Malaysia Day\n31 Oct (Thu): Deepavali\n25 Dec (Wed): Christmas Day\n\nPRC Holiday (China)\n\n1-Jan (Wed): New year\n28 Jan - 4 Feb (Tue - Wed): Chinese New Year\n4-6 Apr (Fri - Sun): Tomb Sweeping Day\n1-5 May (Thur - Mon): Labor Day\n2-Jun (Mon): Dragon Boat Festival\n1-8 Oct (Wed - Wed): Mid-Autumn Festival and National Day\n\nPredictable Events: You know about key operational seasons such as the \"AP Typhoon Season\" (typically June - September) and the \"Year-End Sales Push\" (November - December).\n\nYour Task and Rules\nYou must help users generate optimized MySQL queries(MySQL8.0), data analysis summaries, and schema-based insights. Your key ability is to cross-reference the inventory data from the database with the operational calendar context to provide deeper analysis. For example, analyzing inventory levels before a long holiday or assessing logistical risks during typhoon season.\n\nExample query:\n\"SUM TOTAL_OUTBOUND of January\"\n\"SELECT \n    PLANT_NAME,\n    SUM(NET_QUANTITY_MT) AS TOTAL_OUTBOUND_MT_JAN\nFROM \n    bootkathon.outbound\nWHERE \n    PLANT_NAME = 'CHINA-WAREHOUSE'\n    AND OUTBOUND_DATE >= '2024-01-01'\n    AND OUTBOUND_DATE < '2024-02-01'\nGROUP BY \n    PLANT_NAME;\"\n\"PRIDICT_OUTBOUND of January\"\n\"SELECT * FROM bootkathon.forecast\nWHERE month = 'Jan' AND warehouse = 'CHINA-WAREHOUSE';\"\n\n\nRules:\n- strict for MySQL database(MySQL8.0) query.\n- strict in column name from that table.\n- try execute query again if not found.\n- Don't use FULL OUTER JOIN  use UNION + LEFT JOIN + RIGHT JOIN แทน.\n- Always refer to the column names and descriptions exactly as provided.\n- Never make assumptions about missing tables or fields.\n- If a table or field is unclear or not defined, respond with a clarifying question.\n\nRespond:\n- Be concise, accurate, and helpful.\n- Please specify the currency.\n- Don't respoond query.\n- Answer in details.\n- All responses must be in Thai.\n- Always respond table name used for query like \"from materialmaster\"."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        -460
+      ],
+      "id": "6ebd04fe-dc7e-45f5-82be-08ea4f1a584b",
+      "name": "AI Agent",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        2080,
+        -240
+      ],
+      "id": "5dccf519-287b-47d8-8470-b33894b4cdd1",
+      "name": "SerpAPI",
+      "credentials": {
+        "serpApi": {
+          "id": "bvKHbgDiPokZOz0o",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        2260,
+        -260
+      ],
+      "id": "a48129d1-8ee5-4805-8f20-ed0fcca533af",
+      "name": "Calculator"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields1').item.json.sessionId }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        1740,
+        -220
+      ],
+      "id": "9dafa427-6496-4e7c-9a05-2dbe5ac55f67",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "r36RVa6kzf7S7lqe",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.chatInput.toJsonString()}}",
+        "categories": {
+          "categories": [
+            {
+              "category": "general",
+              "description": "general conversation หรือ เกี่ยวกับ inbound outbound ,10 รายการที่มีการส่งออกสูงสุดจากคลังสินค้าจีนในเดือนที่แล้ว เมื่อเปรียบเทียบกับเดือนเดียวกันของปีที่แล้ว"
+            },
+            {
+              "category": "graph",
+              "description": "ถ้ามีการขอสร้างกราฟ หรือขอกราฟ"
+            },
+            {
+              "category": "table",
+              "description": "ถ้ามีคําว่า\"สร้างตาราง,ขอตาราง หรือ create table\""
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "Please classify the text provided by the user into one of the following categories: {categories}, and use the provided formatting instructions below. Don't explain, and only output the json."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        -60
+      ],
+      "id": "68a64538-139f-4d90-9235-2c235842ca45",
+      "name": "Text Classifier"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $json.sessionId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        840,
+        -80
+      ],
+      "id": "21f475af-2842-4cb6-9584-7a74402dba29",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "r36RVa6kzf7S7lqe",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields1').item.json.sessionId }}",
+        "contextWindowLength": 3
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        1680,
+        200
+      ],
+      "id": "e5a42940-ada1-4bad-8911-f3317c9c7186",
+      "name": "Redis Chat Memory1",
+      "credentials": {
+        "redis": {
+          "id": "r36RVa6kzf7S7lqe",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$('Edit Fields1').item.json.chatInput}}",
+        "options": {
+          "systemMessage": "=Your task is to generate a Chart.js configuration object with the following specifications:\n  - Chart type: bar unless otherwise indicated\n  - Labels: Use the ML # from each record unless otherwise indicated\n  - Show bar for list price if not otherwise indicated\n  - Return only the raw JSON object without code fences or explanations\n\n  This is the user prompt: {{ $json.propertyName[0]}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        -40
+      ],
+      "id": "5195faa9-0c31-491d-b71a-a144299bf87b",
+      "name": "chart.js AI"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5a1d3c5b-c8b9-4d24-ba5f-3e5f6ece41bc",
+                    "leftValue": "={{ $json.propertyName }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.propertyName }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "e96251f0-c082-45a3-9365-9d4ab96cd6dc"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1160,
+        -80
+      ],
+      "id": "afbe72da-1503-44c7-a639-6cf9d32def4e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -100,
+        240
+      ],
+      "id": "837933fd-cbb5-46e5-b785-083ea9394322",
+      "name": "OpenRouter Chat Model2",
+      "credentials": {
+        "openRouterApi": {
+          "id": "a4EMa96stbKHHpvL",
+          "name": "gpt"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "={{ $json.sessionId }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        820,
+        300
+      ],
+      "id": "33095cbe-ff7e-4a7c-ab57-7c8c6f32ea51",
+      "name": "Redis1",
+      "credentials": {
+        "redis": {
+          "id": "r36RVa6kzf7S7lqe",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5a1d3c5b-c8b9-4d24-ba5f-3e5f6ece41bc",
+                    "leftValue": "={{ $json.propertyName }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "empty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.propertyName }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "array",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "e96251f0-c082-45a3-9365-9d4ab96cd6dc"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1140,
+        300
+      ],
+      "id": "f135f01f-32cf-42cb-94e4-7bc93abb2810",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$('Edit Fields1').item.json.chatInput}}",
+        "options": {
+          "systemMessage": "=Your task is to generate a marked.js table with the following specifications:\n  - Use the field names as the header row.\n  - Each row should represent one record from the input data.\n  - Return only the raw Markdown table as a string, without code fences or explanations ครอบด้วย [markdown]...[markdown].\n  - ไม่ให้มี --- | --- | --- | --- | ---\n  - tab-separated\nThis is the user  last msg: {{ $json.propertyName[0]}}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        420
+      ],
+      "id": "f4adcde8-707d-4d22-9a55-ec711c70915a",
+      "name": "Table AI",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields1').item.json.sessionId }}",
+        "contextWindowLength": 3
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.5,
+      "position": [
+        1720,
+        700
+      ],
+      "id": "1c72372c-c4c2-4c0f-8ebf-b2d6341a0360",
+      "name": "Redis Chat Memory2",
+      "credentials": {
+        "redis": {
+          "id": "r36RVa6kzf7S7lqe",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        180
+      ],
+      "id": "f547d17b-d4e4-4211-bb09-d19464bdd346",
+      "name": "Chart Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "a4EMa96stbKHHpvL",
+          "name": "gpt"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        680
+      ],
+      "id": "c10133e6-0d3f-42dd-9034-98b9f6380faa",
+      "name": "Table Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "a4EMa96stbKHHpvL",
+          "name": "gpt"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8bd2992-1c0a-4f58-a2c1-7821da0ee5bc",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3140,
+        -60
+      ],
+      "id": "350b5b45-5a48-4b7c-b32f-8d76208ced00",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ee28b7bc-ad0a-4071-9c3d-69915e6cae5b",
+              "name": "chatInput",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "8bd86c7b-c37e-4226-ab13-6463e33e7897",
+              "name": "sessionId",
+              "value": "={{ $json.sessionId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1040,
+        -60
+      ],
+      "id": "daa78507-bfc3-4623-815c-5fb4f48de21c",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sendmsg",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1740,
+        -60
+      ],
+      "id": "5b3909dc-1b9f-43eb-94bc-fee19caf63d1",
+      "name": "Webhook",
+      "webhookId": "5f76d039-98d7-41ce-a59f-0fb5fb577e78"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "94e69992-2f1b-4a4c-8302-e3af335728d4",
+              "name": "chatInput",
+              "value": "={{$json.body.message}}",
+              "type": "string"
+            },
+            {
+              "id": "300bfbe7-c5c0-4ec8-871a-54a7690d4548",
+              "name": "sessionId",
+              "value": "XEG",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1440,
+        -60
+      ],
+      "id": "225b9ed4-5aa5-4862-8616-2acb5c5772d6",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "sseEndpoint": "http://localhost:5678/mcp/mysql",
+        "include": "selected",
+        "includeTools": [
+          "Execute_a_SQL_query_in_MySQL"
+        ]
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -220
+      ],
+      "id": "a2025705-f90e-45c2-8d99-4957eeca69b2",
+      "name": "MCP for Mysql query"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "efee1101-6f79-411a-8915-3079cdaad082",
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "โนบิตะเสื้อสีอะไร",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -620,
+        -60
+      ],
+      "id": "1bd351b1-2708-40e9-9290-f77a8407a727",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "956abdc2-d93f-4226-9c4e-798830df50c3",
+              "name": "output",
+              "value": "ฉันไม่สามารถตอบคำถามนี้ได้ กรุณาถามเกี่ยวกับสินค้าคงคลัง การขนส่ง หรือการพยากรณ์ยอดขายค่ะ",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -20,
+        -300
+      ],
+      "id": "4783adea-7567-4d7a-abd3-7ee17db9a699",
+      "name": "Edit Fields5"
+    },
+    {
+      "parameters": {
+        "model": "anthropic/claude-3.5-sonnet",
+        "options": {
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1560,
+        -240
+      ],
+      "id": "ed3b2427-4648-4c5f-ae3e-7ada263cb583",
+      "name": "claude model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "a4EMa96stbKHHpvL",
+          "name": "gpt"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SerpAPI": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Classifier": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "chart.js AI",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "chart.js AI": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "chart.js AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Text Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis1": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Table AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Table AI": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Table AI",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chart Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "chart.js AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Table Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Table AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MCP for Mysql query": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Text Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "claude model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "host": "localhost:5678",
+          "connection": "keep-alive",
+          "content-length": "40",
+          "sec-ch-ua-platform": "\"Windows\"",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
+          "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
+          "content-type": "application/json",
+          "sec-ch-ua-mobile": "?0",
+          "accept": "*/*",
+          "origin": "http://localhost:3000",
+          "sec-fetch-site": "same-site",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-dest": "empty",
+          "referer": "http://localhost:3000/",
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9,th;q=0.8"
+        },
+        "params": {},
+        "query": {},
+        "body": {
+          "message": "ธันวาคม 2023"
+        },
+        "webhookUrl": "http://localhost:5678/webhook/sendmsg",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "2ee147e0ac9cd9bf8442214318f1e6e91bc5dfc5c85dab052373332e0cad8fe0"
+  }
+}

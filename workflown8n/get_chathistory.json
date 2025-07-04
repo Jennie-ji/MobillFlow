@@ -1,0 +1,58 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "chat-history",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "48b43960-ac23-488d-8aac-b0d027e34bb4",
+      "name": "Webhook",
+      "webhookId": "bfe48f19-218c-411d-8888-7039945aee0d"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "key": "=XEG",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        280,
+        0
+      ],
+      "id": "aa66b268-e222-4297-84ac-c45043aa2e9e",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "r36RVa6kzf7S7lqe",
+          "name": "Redis account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "2ee147e0ac9cd9bf8442214318f1e6e91bc5dfc5c85dab052373332e0cad8fe0"
+  }
+}

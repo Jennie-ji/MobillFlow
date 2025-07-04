@@ -1,0 +1,667 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "229c3e59-a29f-4af0-8e14-32ecb07bd5bf",
+              "name": "topic",
+              "value": "INVENTORY_SHELF_LIFE_ALERT AT SINGAPORE-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "a72f9a13-a3d0-468d-a2cd-fda1064a06a0",
+              "name": "Description",
+              "value": "Critical inventory alert: Multiple high-value items exceed shelf life. \n1) MAT-0293 (1.43M SGD, 18 months overdue), MAT-0426 (633K SGD, 6 months overdue)\n2) MAT-0040 (528K SGD, 6 months overdue). \nEstimated value loss 40-50%. Immediate action required: replace expired stock, accelerate sales of near-expiry items, review inventory management process.",
+              "type": "string"
+            },
+            {
+              "id": "2aa321a8-4a6c-4138-a8b1-e12902deb17c",
+              "name": "warehouse",
+              "value": "SINGAPORE-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "3a715239-1863-4b44-8e0a-f5d29abf1281",
+              "name": "date",
+              "value": "={{ $today.minus({ year: 1 }).minus({ month: 5 }).startOf('month').toLocaleString({ month: 'long', day: 'numeric', year: 'numeric' })}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        0
+      ],
+      "id": "8d0184cf-a665-4d26-ae59-badb2cc9306d",
+      "name": "01"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "229c3e59-a29f-4af0-8e14-32ecb07bd5bf",
+              "name": "topic",
+              "value": "SUMMARY_WAREHOUSE_REPORT",
+              "type": "string"
+            },
+            {
+              "id": "a72f9a13-a3d0-468d-a2cd-fda1064a06a0",
+              "name": "Description",
+              "value": "China Warehouse (CHINA-WAREHOUSE):\n\nNumber of Records: 15,510 entries\nTotal Inventory Value: 9,711,560,959 CNY\n\nSingapore Warehouse (SINGAPORE-WAREHOUSE):\nNumber of Records: 12,818 entries\nTotal Inventory Value: 734,170,938 SGD\n\n",
+              "type": "string"
+            },
+            {
+              "id": "2aa321a8-4a6c-4138-a8b1-e12902deb17c",
+              "name": "warehouse",
+              "value": "CHINA-WAREHOUSE, SINGAPORE-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "3a715239-1863-4b44-8e0a-f5d29abf1281",
+              "name": "date",
+              "value": "={{ $today.minus({ year: 1 }).minus({ month: 5 }).startOf('month').toLocaleString({ month: 'long', day: 'numeric', year: 'numeric' })}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        0
+      ],
+      "id": "3b449443-2517-468e-b47c-bb86cd25d4c7",
+      "name": "03"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "229c3e59-a29f-4af0-8e14-32ecb07bd5bf",
+              "name": "topic",
+              "value": "INVENTORY_SHELF_LIFE_ALERT AT CHINA-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "a72f9a13-a3d0-468d-a2cd-fda1064a06a0",
+              "name": "Description",
+              "value": "Critical inventory alert: Multiple high-value items exceed shelf life. \n1) MAT-0293 (1.43M SGD, 18 months overdue)\n2) MAT-0426 (633K SGD, 6 months overdue)\n3) MAT-0040 (528K SGD, 6 months overdue). \nEstimated value loss 40-50%. Immediate action required: replace expired stock, accelerate sales of near-expiry items, review inventory management process.",
+              "type": "string"
+            },
+            {
+              "id": "2aa321a8-4a6c-4138-a8b1-e12902deb17c",
+              "name": "warehouse",
+              "value": "CHINA-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "3a715239-1863-4b44-8e0a-f5d29abf1281",
+              "name": "date",
+              "value": "={{ $today.minus({ year: 1 }).minus({ month: 5 }).startOf('month').toLocaleString({ month: 'long', day: 'numeric', year: 'numeric' })}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        0
+      ],
+      "id": "476b75a6-d242-4507-9754-c65b5be3ac15",
+      "name": "02"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45c3969d-bdae-497b-ae6c-621d8c84c816",
+              "name": "output",
+              "value": "=[{{ $('01').first().json.toJsonString() }},{{ $('02').first().json.toJsonString() }},{{ $('03').first().json.toJsonString() }},{{$('04').first().json.toJsonString()}},{{$('05').first().json.toJsonString()}}]",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "e716a6d9-e8f7-4cfc-8419-94ad27ea83a2",
+      "name": "output"
+    },
+    {
+      "parameters": {
+        "path": "get_notification",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -220,
+        0
+      ],
+      "id": "042367e8-e168-426c-8d4c-4ca0c4ade2c6",
+      "name": "Webhook",
+      "webhookId": "1d2ff516-4fc6-4218-ac5b-897fc5d557dd"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "229c3e59-a29f-4af0-8e14-32ecb07bd5bf",
+              "name": "topic",
+              "value": "Upcoming Holiday Notification – February Planning Alert",
+              "type": "string"
+            },
+            {
+              "id": "a72f9a13-a3d0-468d-a2cd-fda1064a06a0",
+              "name": "Description",
+              "value": "Please be advised of the following upcoming holidays that may affect warehouse operations and transportation schedules across the region:  \n🧧 Chinese New Year (February 10–12) – 9 days remaining  \nChina: Closed from January 28 to February 4  \nSingapore: Closed from February 10 to 12  \nMalaysia: Closed from February 10 to 12  \n🕌 Other February Holidays  Malaysia: Isra and Mi'raj on February 8",
+              "type": "string"
+            },
+            {
+              "id": "2aa321a8-4a6c-4138-a8b1-e12902deb17c",
+              "name": "warehouse",
+              "value": "ALL-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "3a715239-1863-4b44-8e0a-f5d29abf1281",
+              "name": "date",
+              "value": "={{ $today.minus({ year: 1 }).minus({ month: 5 }).startOf('month').toLocaleString({ month: 'long', day: 'numeric', year: 'numeric' })}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        0
+      ],
+      "id": "fefd58f8-0d7f-4e68-9db6-ce1bed480a2e",
+      "name": "04"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "=Ue4fa6c31f3c6ce63eaafd05a4b39af31",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('01').item.json.topic}}\n{{ $('01').item.json.Description}}\n{{ $('01').item.json.date}}\n{{ $('01').item.json.warehouse}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        1740,
+        0
+      ],
+      "id": "b139f787-27a2-48e3-8bdc-c07d1e80e108",
+      "name": "Line Messaging",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "GRKKaKAHtp2huAAo",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1500,
+        0
+      ],
+      "id": "dae46de8-b65e-4380-8578-55f1a2451f93",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "=Ue4fa6c31f3c6ce63eaafd05a4b39af31",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('02').item.json.topic}}\n{{ $('02').item.json.Description}}\n{{ $('02').item.json.date}}\n{{ $('02').item.json.warehouse}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        0
+      ],
+      "id": "623b4c21-a0ba-44c1-9dff-f533d2433b7a",
+      "name": "Line Messaging1",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "GRKKaKAHtp2huAAo",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "=Ue4fa6c31f3c6ce63eaafd05a4b39af31",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('03').item.json.topic}}\n{{ $('03').item.json.Description}}\n{{ $('03').item.json.date}}\n{{ $('03').item.json.warehouse}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        2760,
+        0
+      ],
+      "id": "21b9d435-1bf5-4d98-b64d-534e6738ec87",
+      "name": "Line Messaging2",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "GRKKaKAHtp2huAAo",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "=Ue4fa6c31f3c6ce63eaafd05a4b39af31",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('04').item.json.topic}}\n{{ $('04').item.json.Description}}\n{{ $('04').item.json.date}}\n{{ $('04').item.json.warehouse}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        3220,
+        0
+      ],
+      "id": "737519de-8c08-4d18-9650-736d8b609eec",
+      "name": "Line Messaging3",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "GRKKaKAHtp2huAAo",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "229c3e59-a29f-4af0-8e14-32ecb07bd5bf",
+              "name": "topic",
+              "value": "January 2024 Warehouse Capacity Analysis",
+              "type": "string"
+            },
+            {
+              "id": "a72f9a13-a3d0-468d-a2cd-fda1064a06a0",
+              "name": "Description",
+              "value": "Capacity usage for both warehouses remains within acceptable limits.\n\n- Singapore Warehouse:\n  - Max capacity: 53.50 kt\n  - Forecasted inventory: 39.58 kt\n  - Utilization: 74.00%\n  - Available space: 13.92 kt (26.00%)\n\n- China Warehouse:\n  - Max capacity: 58.00 kt\n  - Forecasted inventory: 40.00 kt\n  - Utilization: 68.97%\n  - Available space: 18.00 kt (31.03%)\n\nSummary:\n\n- Both warehouses have sufficient remaining space.\n- China has more available capacity than Singapore.\n- Utilization levels are similar (68–74%).",
+              "type": "string"
+            },
+            {
+              "id": "2aa321a8-4a6c-4138-a8b1-e12902deb17c",
+              "name": "warehouse",
+              "value": "SINGAPORE-WAREHOUSE, CHINA-WAREHOUSE",
+              "type": "string"
+            },
+            {
+              "id": "3a715239-1863-4b44-8e0a-f5d29abf1281",
+              "name": "date",
+              "value": "={{ $today.minus({ year: 1 }).minus({ month: 5 }).startOf('month').toLocaleString({ month: 'long', day: 'numeric', year: 'numeric' })}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1060,
+        0
+      ],
+      "id": "537f7700-2fe2-40f0-b781-85fe0cb52a29",
+      "name": "05"
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "to": "=Ue4fa6c31f3c6ce63eaafd05a4b39af31",
+        "messages": {
+          "values": [
+            {
+              "text": "={{ $('05').item.json.topic}}\n{{ $('05').item.json.Description}}\n{{ $('05').item.json.date}}\n{{ $('05').item.json.warehouse}}"
+            }
+          ]
+        }
+      },
+      "type": "@aotoki/n8n-nodes-line-messaging.lineMessaging",
+      "typeVersion": 1,
+      "position": [
+        3680,
+        0
+      ],
+      "id": "d4e6372d-6af6-444b-b347-423638c11f00",
+      "name": "Line Messaging4",
+      "credentials": {
+        "lineMessagingApi": {
+          "id": "GRKKaKAHtp2huAAo",
+          "name": "Line Messaging account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1980,
+        0
+      ],
+      "id": "15ba4842-ae0c-4c2d-9a36-97006d7c46c6",
+      "name": "Wait",
+      "webhookId": "c7f30746-a50d-45b2-aa0a-99133573eef2"
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2460,
+        0
+      ],
+      "id": "182e6b64-e6a3-4e26-9a46-7c25101399dc",
+      "name": "Wait1",
+      "webhookId": "c7f30746-a50d-45b2-aa0a-99133573eef2"
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3000,
+        0
+      ],
+      "id": "5d9d6778-2615-4cda-a0d7-961c45134cbc",
+      "name": "Wait2",
+      "webhookId": "c7f30746-a50d-45b2-aa0a-99133573eef2"
+    },
+    {
+      "parameters": {
+        "amount": 0.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3440,
+        0
+      ],
+      "id": "a2fc8784-631d-4415-b243-4b77a9642a9e",
+      "name": "Wait3",
+      "webhookId": "c7f30746-a50d-45b2-aa0a-99133573eef2"
+    }
+  ],
+  "connections": {
+    "01": {
+      "main": [
+        [
+          {
+            "node": "02",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "03": {
+      "main": [
+        [
+          {
+            "node": "04",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02": {
+      "main": [
+        [
+          {
+            "node": "03",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "output": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "01",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04": {
+      "main": [
+        [
+          {
+            "node": "05",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging1": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging2": {
+      "main": [
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging3": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "05": {
+      "main": [
+        [
+          {
+            "node": "output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Line Messaging4": {
+      "main": [
+        []
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Line Messaging4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {
+    "Webhook": [
+      {
+        "headers": {
+          "host": "localhost:5678",
+          "connection": "keep-alive",
+          "sec-ch-ua-platform": "\"Windows\"",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0",
+          "sec-ch-ua": "\"Not)A;Brand\";v=\"8\", \"Chromium\";v=\"138\", \"Microsoft Edge\";v=\"138\"",
+          "content-type": "application/json",
+          "sec-ch-ua-mobile": "?0",
+          "accept": "*/*",
+          "origin": "http://localhost:3000",
+          "sec-fetch-site": "same-site",
+          "sec-fetch-mode": "cors",
+          "sec-fetch-dest": "empty",
+          "referer": "http://localhost:3000/",
+          "accept-encoding": "gzip, deflate, br, zstd",
+          "accept-language": "en-US,en;q=0.9,th;q=0.8",
+          "if-none-match": "W/\"823-tm2Lcorch7h0GXHWOrmx2Vp40DE\""
+        },
+        "params": {},
+        "query": {},
+        "body": {},
+        "webhookUrl": "http://localhost:5678/webhook/get_notification",
+        "executionMode": "production"
+      }
+    ]
+  },
+  "meta": {
+    "instanceId": "2ee147e0ac9cd9bf8442214318f1e6e91bc5dfc5c85dab052373332e0cad8fe0"
+  }
+}

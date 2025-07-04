@@ -1,0 +1,56 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "path": "mysql"
+      },
+      "type": "@n8n/n8n-nodes-langchain.mcpTrigger",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a6e96da8-cd41-49e7-960e-72c556a4f005",
+      "name": "MCP Server Trigger",
+      "webhookId": "831a1bee-e3a1-490a-9af6-ab0c892a4f93"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $fromAI('MySQL_query','Query','string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySqlTool",
+      "typeVersion": 2.4,
+      "position": [
+        180,
+        220
+      ],
+      "id": "47ecf69a-b9a3-4191-8fea-bbaefbd0f299",
+      "name": "Execute a SQL query in MySQL",
+      "credentials": {
+        "mySql": {
+          "id": "c7nbGY2aRKNmVCxb",
+          "name": "MySQL account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute a SQL query in MySQL": {
+      "ai_tool": [
+        [
+          {
+            "node": "MCP Server Trigger",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "2ee147e0ac9cd9bf8442214318f1e6e91bc5dfc5c85dab052373332e0cad8fe0"
+  }
+}

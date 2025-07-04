@@ -158,7 +158,7 @@ export function ChatWithEmmie() {
     scrollToBottom()
   }, [messages, isThinking])
 
-  const suggestions = ["สร้างกราฟ", "สร้างตาราง","รายการ Inbound สูงสุดจากคลังสินค้าจีนในเดือนที่แล้ว เมื่อเปรียบเทียบกับเดือนก่อนหน้า", "ระดับ Inventory เดือนที่เเล้วที่คลังสินค้าทุกแห่งเปรียบเทียบกับ Inventory ที่pridictไว้เป็นอย่างไร?", "outbound เดือนที่เเล้ว เปรียบเทียบกับ outbound ที่pridictไว้เป็นอย่างไร?","มีBATCHESใดบ้างที่มีการถือครองสินค้าที่ยาวนานกว่าช่วงเวลาที่กำหนดในเดือนที่แล้ว?"]
+  const suggestions = ["สร้างกราฟ", "สร้างตาราง","รายการ Inbound สูงสุดจากคลังสินค้าจีนในเดือนที่แล้ว เมื่อเปรียบเทียบกับเดือนก่อนหน้า", "ระดับ Inventory เดือนที่เเล้วที่คลังสินค้าทุกแห่งเปรียบเทียบกับ Inventory ที่ predict ไว้เป็นอย่างไร?", "outbound เดือนที่เเล้ว เปรียบเทียบกับ outbound ที่ predict ไว้เป็นอย่างไร?"]
 
   // Load chat history on component mount
   useEffect(() => {
