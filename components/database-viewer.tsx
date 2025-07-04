@@ -183,7 +183,7 @@ export function DatabaseViewer() {
         <SelectContent>
           {options.map(([val, label]) => (
             <SelectItem key={val} value={val}>
-              {label}
+              {val}
             </SelectItem>
           ))}
         </SelectContent>
@@ -284,9 +284,6 @@ export function DatabaseViewer() {
                         <ChevronRight className="h-4 w-4" />
                       )}
                       <h3 className="text-lg font-semibold">{table.name}</h3>
-                      <span className="text-sm text-gray-500">
-                        ({table.data.length} records)
-                      </span>
                     </div>
                     <Button
                       variant="outline"
@@ -308,10 +305,10 @@ export function DatabaseViewer() {
                         <Input
                           placeholder={
                             name === "outbound"
-                              ? "MATERIAL_NAME or CUSTOMER_NUMBER"
+                              ? "search MATERIAL_NAME or CUSTOMER_NUMBER"
                               : name === "inventory"
-                              ? "MATERIAL_NAME or BATCH_NUMBER"
-                              : "MATERIAL_NAME"
+                              ? "search MATERIAL_NAME or BATCH_NUMBER"
+                              : "search MATERIAL_NAME"
                           }
                           value={searchTerms[name] || ""}
                           onChange={(e) => handleSearch(name, e.target.value)}
@@ -321,33 +318,37 @@ export function DatabaseViewer() {
                       {renderFilters(name)}
                     </div>
                     <div className="border rounded-lg overflow-hidden">
-                      <div className="max-h-[300px] overflow-y-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="bg-gray-50">
+                      <div className="relative max-h-[300px] overflow-y-auto">
+                        <table className="w-full text-sm text-left text-gray-700">
+                          <thead className="sticky top-0 z-10 bg-gray-200">
+                            <tr className="bg-gray-200 border-b border-gray-300">
+                              <th className="font-semibold px-4 py-2">#</th>
                               {table.columns.map((column) => (
-                                <TableHead
+                                <th
                                   key={column}
-                                  className="font-semibold"
+                                  className="font-semibold px-4 py-2"
                                 >
                                   {column}
-                                </TableHead>
+                                </th>
                               ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
+                            </tr>
+                          </thead>
+                          <tbody>
                             {table.data.map((row, rowIndex) => (
-                              <TableRow
+                              <tr
                                 key={rowIndex}
-                                className="hover:bg-gray-50"
+                                className="border-b border-gray-200 hover:bg-gray-50"
                               >
+                                <td className="px-4 py-2">{rowIndex + 1}</td>
                                 {row.map((cell: any, cellIndex: number) => (
-                                  <TableCell key={cellIndex}>{cell}</TableCell>
+                                  <td key={cellIndex} className="px-4 py-2">
+                                    {cell}
+                                  </td>
                                 ))}
-                              </TableRow>
+                              </tr>
                             ))}
-                          </TableBody>
-                        </Table>
+                          </tbody>
+                        </table>
                       </div>
                     </div>
                     {table.data.length >=
