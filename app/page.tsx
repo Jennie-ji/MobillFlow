@@ -10,6 +10,8 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Chart, LineController, LineElement, PointElement, LinearScale, Title, CategoryScale } from 'chart.js';
 
+import { UserDropdown } from "@/components/user-dropdown"
+
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale);
 
 type ActiveSection = "chat" | "dashboard" | "database"
@@ -59,9 +61,9 @@ export default function Home() {
               {activeSection === "database" && "View and manage your data"}
             </p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <NotificationDropdown />
-            
+            <UserDropdown />
           </div>
         </header>
 

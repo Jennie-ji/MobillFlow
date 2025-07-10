@@ -164,7 +164,16 @@ export function ChatWithEmmie() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch("http://localhost:5678/webhook/chat-history")
+        const { userName } = useWidgetStore.getState(); // Get userName from store
+        const userId = userName !== "Guest" ? userName : "anonymous"; // Use userName if logged in, else "anonymous"
+
+        const res = await fetch("http://localhost:5678/webhook/chat-history", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ userId: userId }),
+        })
         if (!res.ok) {
           console.warn("[ChatWithEmmie] chat-history fetch failed", res.status, res.statusText)
           return
@@ -250,7 +259,7 @@ export function ChatWithEmmie() {
       }
     }
     fetchHistory()
-  }, [])
+  }, [useWidgetStore().isLoggedIn])
 
   const handleSend = async () => {
     if (!inputValue.trim() || isThinking) return
@@ -267,10 +276,13 @@ export function ChatWithEmmie() {
     setIsThinking(true)
 
     try {
+      const { userName } = useWidgetStore.getState();
+      const userId = userName !== "Guest" ? userName : "anonymous";
+
       const response = await fetch("http://localhost:5678/webhook/sendmsg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: inputValue }),
+        body: JSON.stringify({ message: inputValue, userId: userId }),
       })
       
       if (!response.ok) throw new Error("Network response was not ok")

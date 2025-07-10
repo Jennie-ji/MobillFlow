@@ -15,12 +15,15 @@ export interface Widget {
 interface WidgetStore {
   widgets: Widget[]
   availableWidgets: Widget[]
+  isLoggedIn: boolean
+  userName: string
   addWidget: (widget: Widget) => void
   removeWidget: (id: string) => void
   addAvailableWidget: (widget: Widget) => void
   removeAvailableWidget: (id: string) => void
   updateWidget: (id: string, update: Partial<Widget>) => void
   setWidgets: (widgets: Widget[]) => void
+  setLoginStatus: (isLoggedIn: boolean, userName: string) => void
 }
 
 // ข้อมูลเริ่มต้นของ Widgets (ยกมาจาก ai-dashboard.tsx)
@@ -70,6 +73,8 @@ export const useWidgetStore = create<WidgetStore>()(
     (set) => ({
       widgets: initialWidgets,
       availableWidgets: [],
+      isLoggedIn: false,
+      userName: "Guest",
       addWidget: (widget) =>
         set((state) => ({
           widgets: [...state.widgets, widget],
@@ -91,6 +96,7 @@ export const useWidgetStore = create<WidgetStore>()(
           widgets: state.widgets.map((w) => w.id === id ? { ...w, ...update } : w),
         })),
       setWidgets: (widgets) => set({ widgets }),
+      setLoginStatus: (isLoggedIn, userName) => set({ isLoggedIn, userName }),
     }),
     { name: "dashboard-widgets" }
   )
