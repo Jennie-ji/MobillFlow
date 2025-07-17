@@ -24,6 +24,7 @@ interface WidgetStore {
   updateWidget: (id: string, update: Partial<Widget>) => void
   setWidgets: (widgets: Widget[]) => void
   setLoginStatus: (isLoggedIn: boolean, userName: string) => void
+  clearAvailableWidgets: () => void
 }
 
 // ข้อมูลเริ่มต้นของ Widgets (ยกมาจาก ai-dashboard.tsx)
@@ -97,6 +98,7 @@ export const useWidgetStore = create<WidgetStore>()(
         })),
       setWidgets: (widgets) => set({ widgets }),
       setLoginStatus: (isLoggedIn, userName) => set({ isLoggedIn, userName }),
+      clearAvailableWidgets: () => set({ availableWidgets: [] }),
     }),
     { name: "dashboard-widgets" }
   )

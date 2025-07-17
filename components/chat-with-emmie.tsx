@@ -138,14 +138,23 @@ function parseApiResponse(content: any): { type: string; parsedContent: any; dis
 
 export function ChatWithEmmie() {
   const router = useRouter();
+  const { isLoggedIn } = useWidgetStore();
+
+  // Redirect to /login if not logged in
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [isLoggedIn, router]);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       type: "assistant",
-      content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?",
-      data: { type: "text", content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?" },
+      content: "Hello! I'm Emmie👋 , your AI warehouse assistant. How can I help you today? ☺️",
+      data: { type: "text", content: "Hello! I'm Emmie👋 , your AI warehouse assistant. How can I help you today? ☺️" },
     },
-  ])
+  ]);
   const [inputValue, setInputValue] = useState("")
   const [isThinking, setIsThinking] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -158,7 +167,16 @@ export function ChatWithEmmie() {
     scrollToBottom()
   }, [messages, isThinking])
 
-  const suggestions = ["สร้างกราฟ", "สร้างตาราง","รายการ Inbound สูงสุดจากคลังสินค้าจีนในเดือนที่แล้ว เมื่อเปรียบเทียบกับเดือนก่อนหน้า", "ระดับ Inventory เดือนที่เเล้วที่คลังสินค้าทุกแห่งเปรียบเทียบกับ Inventory ที่ predict ไว้เป็นอย่างไร?", "outbound เดือนที่เเล้ว เปรียบเทียบกับ outbound ที่ predict ไว้เป็นอย่างไร?"]
+  const suggestions = [
+    "สร้างกราฟ",
+    "สร้างตาราง",
+    "เดือนนี้มีการรับสินค้าเข้าคลังเท่าไหร่",
+    "เดือนนี้ส่งสินค้าทั้งหมดเท่าไหร่ของเเต่ละคลัง",
+    "ที่ผ่านมาคลังไหนใช้พื้นที่เก็บเกินความจุ?",
+    "เดือนนี้ขอ forecast เทียบกับค่าจริง" ,
+    "Warehouse สิงคโปร์",
+    "Wearehouse จีน"
+  ]
 
   // Load chat history on component mount
   useEffect(() => {
@@ -241,8 +259,8 @@ export function ChatWithEmmie() {
             {
               id: "1",
               type: "assistant",
-              content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?",
-              data: { type: "text", content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?" },
+              content: "Hello! I'm Emmie👋 , your AI warehouse assistant. How can I help you today? ☺️",
+              data: { type: "text", content: "Hello! I'm Emmie👋 , your AI warehouse assistant. How can I help you today? ☺️" },
             },
           ])
         }
@@ -252,8 +270,8 @@ export function ChatWithEmmie() {
           {
             id: "1",
             type: "assistant",
-            content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?",
-            data: { type: "text", content: "Hello! I'm Emmie, your AI warehouse assistant. How can I help you today?" },
+            content: "Hello! I'm Emmie👋 , your AI warehouse assistant. How can I help you today? ☺️",
+            data: { type: "text", content: "Hello! I'm Emmie👋 , your AI warehouse assistant. How can I help you today? ☺️" },
           },
         ])
       }
